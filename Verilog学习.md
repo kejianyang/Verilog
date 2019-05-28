@@ -1,4 +1,4 @@
-# Verilog学习
+#   Verilog学习
 
 [TOC]
 
@@ -469,6 +469,8 @@ always@(current_state or input_signals)//敏感信号表：所有右边表达式
             end
             amuse:begin
             end
+            default：begin
+            end
         endcase
     end
 
@@ -476,3 +478,104 @@ always@(current_state or input_signals)//敏感信号表：所有右边表达式
 
 ###### 各个状态下的操作
 
+```verilog
+//action
+wire read_book;
+assign read_book=(current_state==study)?1'b1:1'b0;
+```
+
+```verilog
+always@(current_state) begin
+    if(current_state==study)
+        read_book=1;
+    else
+        read_book=0;
+end
+```
+
+#### 4实例
+
+```verilog
+module devide7_fsm(
+    //input ports
+    input sys_clk,
+    input sys_rst,
+    //output ports
+    output reg clk_devide7
+);
+    //reg define
+    reg[6:0] current_state;
+    reg[6:0] next_state;
+    //wire define 
+    //parameter define 
+    WIDTH=1
+    //one hot code design 
+    parameter S0=7'b0000000;
+    parameter S1=7'b0000010;
+    parameter S2=7'b0000100;
+    parameter S3=7'b0001000;
+    parameter S4=7'b0010000;
+    parameter S5=7'b0100000;
+    parameter S6=7'b1000000;
+    always(posedge sys_clk or negedge sys_rst)begin
+        if(!sys_rst)
+            current_stare<=	S0;
+        else
+            current_state<=next_state;
+    end
+    //FSM state Logic
+    always @(*) begin 
+        case(current_state)
+            S0:begin
+                next_state=S1;
+            end
+            S1:begin
+                next_state=S2;
+            end
+            S2:begin
+                next_state=S3;
+            end
+            S3:begin
+                next_state=S4;
+            end
+            S4:begin
+                next_state=S5;
+            end
+            S5:begin
+                next_state=S6;
+            end
+            S6:begin
+                next_state=S0;
+            end
+            default:begin
+                next_state=S0;
+            end
+        endcase
+    end
+    always(posedge sys_clk or negedge sys_rst)begin
+        if(!sys_rst)begin
+            clk_devide7<=1'b0;
+        end
+        else if（(current_state==S0)|(current_state==S1)|(current_state==S2)|(current_state==S3))
+            clk_devide7<=1'b0;
+        else if（(current_state==S4)|(current_state==S5)|(current_state==S6))
+            clk_devide7<=1'b1;
+        else;
+    end
+endmodule
+                
+            
+            
+```
+
+![1559035320929](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1559035320929.png)
+
+三段式可以在组合逻辑后再增加一级寄存器来实现时序逻辑输出：
+
+1. 可以有效地滤去组合逻辑输出的毛刺
+2. 可以有效地进行时序计算与约束
+3. 另外对于总线心事的输出信号来说，容易是总线数据对齐，从而减小总线数据间的偏移，减小接收端数据采样出错的频率
+
+## 实战篇--基础外设
+
+### 1流水灯实验
