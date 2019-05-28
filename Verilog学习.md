@@ -1,5 +1,9 @@
 # Verilog学习
 
+[TOC]
+
+
+
 ## 语法篇
 
 ### 一、基础语法
@@ -30,7 +34,7 @@
 
 标识符区别大小写
 
-###### 推荐写法：
+推荐写法：
 
 ​	不建议大小写混用
 
@@ -356,3 +360,119 @@ end
 **注意：在同一个always块中不要既用非阻塞赋值又用阻塞赋值。**
 
 ​			**不允许在多个always块中对同一个变量进行赋值。**
+
+#### 3条件语句
+
+##### if_else语句
+
+if
+
+if.....else
+
+if....else if.....else if ....else
+
+条件语句必须在过程块语句（由initial和always语句引导的块语句）中使用。
+
+**0,x,z按照假处理  1按照真处理**
+
+##### case语句
+
+1 分支表达式值互不相同
+
+2 所有表达式位宽必须相等
+
+3 casez比较时，不考虑表达式中的高阻值
+
+4 casex不考虑高阻值z和casex
+
+![1559024723772](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1559024723772.png)
+
+### 四状态机
+
+#### 1状态机概念
+
+状态机（State Machine）有限状态机(Finite State Machine/FSM)：在有限个状态之间按一定规律转换的时序电路
+
+#### 2状态机模型
+
+![1559031681802](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1559031681802.png)
+
+​	**状态寄存器**由一组触发器构成，用来记忆状态机当前所处的状态，状态的改变只发生在时钟的跳变沿
+
+​	状态是否改变，如何改变取决于**组合逻辑F**的输出，F是当前状态和输入信号的函数
+
+​	状态机的输出是由输出**组合逻辑G**提供的，G也是当前状态和输入信号的函数
+
+![1559032188251](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1559032188251.png)
+
+#### 3状态机设计
+
+##### 四段论
+
+###### 状态空间定义
+
+```verilog
+//define state space
+parameter sleep	=2'b00;
+parameter study	=2'b01;
+parameter eat	=2'b10;
+parameter amuse	=2'b11;
+reg[1:0] current_state;
+reg[1:0] next_state;
+```
+
+```verilog
+//define state space
+parameter sleep	=4'b1000;
+parameter study	=4'b0100;
+parameter eat	=4'b0010;
+parameter amuse	=4'b0001;
+reg[3:0] current_state;
+reg[3:0] next_state;
+```
+
+独热码：每个状态只有一个寄存器置位，译码逻辑简单
+
+###### 状态跳转（时序逻辑）
+
+```verilog
+always@(posedge clk or negedge rst )
+    begin
+        if(!rst)
+            current_state<=sleep;
+        else
+            current_state<=next_state;//使用非阻塞赋值
+    end
+```
+
+###### 下个状态判断(组合逻辑)
+
+```verilog
+//next sttate decision
+always@(current_state or input_signals)//敏感信号表：所有右边表达式变量以及if，case条件中变量
+    begin
+        case(current_state)
+            sleep:begin
+                if(clock_arm)
+                    next_state=study;
+                else
+                    next_state=sleep;//使用组合逻辑  阻塞赋值
+            end
+            //if else 要配对 避免latch发生（latch 锁存器 电平触发的存储器）
+            study:begin
+                if(lunch_time)
+                    next_state=eat;
+                else
+                    next_state=sy=tudy;
+            end
+            eat：begin
+            end
+            amuse:begin
+            end
+        endcase
+    end
+
+```
+
+###### 各个状态下的操作
+
