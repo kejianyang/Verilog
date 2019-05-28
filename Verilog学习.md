@@ -385,7 +385,7 @@ if....else if.....else if ....else
 
 4 casex不考虑高阻值z和casex
 
-![1559024723772](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1559024723772.png)
+![1559024723772](assets/1559024723772.png)
 
 ### 四状态机
 
@@ -395,7 +395,7 @@ if....else if.....else if ....else
 
 #### 2状态机模型
 
-![1559031681802](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1559031681802.png)
+![1559031681802](assets/1559031681802.png)
 
 ​	**状态寄存器**由一组触发器构成，用来记忆状态机当前所处的状态，状态的改变只发生在时钟的跳变沿
 
@@ -403,7 +403,7 @@ if....else if.....else if ....else
 
 ​	状态机的输出是由输出**组合逻辑G**提供的，G也是当前状态和输入信号的函数
 
-![1559032188251](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1559032188251.png)
+![1559032188251](assets/1559032188251.png)
 
 #### 3状态机设计
 
@@ -568,7 +568,7 @@ endmodule
             
 ```
 
-![1559035320929](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1559035320929.png)
+![1559035320929](assets/1559035320929.png)
 
 三段式可以在组合逻辑后再增加一级寄存器来实现时序逻辑输出：
 
