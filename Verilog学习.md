@@ -579,3 +579,111 @@ endmodule
 ## 实战篇--基础外设
 
 ### 1流水灯实验
+
+```verilog
+module flow_led(
+    input sys_clk,
+    input sys_rst,
+    output reg[3:0] led
+);
+    reg [23:0] cnt;
+    always @(posedge sys_clk or negedge sys_rst)
+        begin
+            if(!sys_rst)
+                cnt<=24'b0000_0000_0000_0000_0000_0000;
+            else
+                if(cnt<24'd10000000)
+                	cnt<=cnt+1;
+            	else
+                    cnt<=24'b0000_0000_0000_0000_0000_0000;
+        end
+    always @(posedge sys_clk or negedge sys_rst)
+        begin
+            if(!sys_rst)
+                led<=4'b0001;
+            else
+                if(cnt==24'd10000000)
+                    led<={led[2:0],led[3]};
+            	else
+                    led<=led;
+        end
+endmodule
+            
+
+```
+
+### 2按键控制LED
+
+```verilog
+/*
+无按键按下  四个led全灭
+按下KEY0   自右向左流水灯
+按下key1   自左向右流水灯
+按下key2   同时闪烁
+按下key3   全亮
+*/
+module k_led(
+	input clk,
+    input rst,
+    input [3:0] key,
+    output reg[3:0] led
+);
+    //reg define
+    reg [23:0] cnt;
+    reg [2:0]  led_ctrl;
+    // 50m CLK  0.2S计数器
+    always @(posedge sys_clk or negedge sys_rst)
+        begin
+            if(!rst)
+                cnt<=24'd0;
+            else
+                if(cnt<24'd10000000)
+                	cnt<=cnt+1;
+            	else
+                    cnt<=24'b0000_0000_0000_0000_0000_0000;
+        end
+    //每个0.2s改变状态
+    always @(posedge sys_clk or negedge sys_rst)
+        begin
+            if(!rst)
+                led_ctrl<=2'b0;
+            else
+                if(cnt===24'd10000000)
+                	led_ctrl<=led_crtl+1'b1;
+            	else
+                    led_ctrl<=led_ctrl;
+        end
+    always @(posedge clk or negedge rst)begin
+        if(!rst)
+            led<=4'b0000;
+    	else
+            if(key[0]==1'b0)//按键按下低电平
+                case(led_ctrl)
+                    2'd0：led<=4'b0001;
+                    2'd1：led<=4'b0010;
+                    2'd2：led<=4'b0100;
+                    2'd3：led<=4'b1000;
+                endcase
+  			else if(key[1]==1'b0)//按键按下低电平
+                case(led_ctrl)
+                    2'd0：led<=4'b1000;
+                    2'd1：led<=4'b0100;
+                    2'd2：led<=4'b0010;
+                    2'd3：led<=4'b0001;
+                endcase
+    		else if(key[1]=1'b0)
+                case(led_ctrl)
+                    2'd0：led<=4'b1111;
+                    2'd1：led<=4'b0000;
+                    2'd2：led<=4'b1111;
+                    2'd3：led<=4'b0000;
+                endcase
+    		else if(key[3]==1'b0)
+                led<=4'b1111;
+    		else
+                led<=4'b0000;
+    end
+endmodule
+
+```
+
