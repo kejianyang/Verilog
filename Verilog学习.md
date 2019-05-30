@@ -1,3 +1,8 @@
+---
+typora-copy-images-to: assets
+typora-root-url: assets
+---
+
 #   Verilog学习
 
 [TOC]
@@ -685,5 +690,146 @@ module k_led(
     end
 endmodule
 
+```
+
+### 3按键控制蜂鸣器
+
+蜂鸣器 引脚长为正极
+
+#### 按键抖动
+
+![1559196132572](1559196132572.png)
+
+#### 按键消抖
+
+![1559196682106](/1559196682106.png)
+
+top.v
+
+```verilog
+//top
+module top_key_beep(
+    input            clk,
+    input            rst,
+    input            key,
+    output           beep
+    );
+    wire key_value;
+    wire key_flag;
+ key_debounce u_key_debounce(
+    .clk        (clk),
+    .rst        (rst),
+    .key        (key),
+    .key_value  (key_value),
+    .key_flag  (key_flag)
+    );
+    beep_control u_beep_control(
+    .clk        (clk),
+    .rst        (rst),
+    .beep       (beep),  
+    .key_value  (key_value),
+    .key_flag  (key_flag)  
+    );
+endmodule
+
+```
+
+key_debounce.v
+
+```verilog
+module key_debounce(
+    input            clk,
+    input            rst,
+    input            key,
+    output  reg     key_value,
+    output  reg     key_flag
+    );
+    reg         key_reg;
+    reg [19:0]  delay_cnt;
+    always@(posedge clk or negedge rst)
+    begin
+        if(!rst)
+        begin
+            key_flag<=1;
+            delay_cnt=20'd0;
+        end
+        else
+         begin  
+            key_reg<=key;
+            if(key!=key_reg)
+                delay_cnt<=20'd1000000;
+            else begin
+                if( delay_cnt>0)
+                    delay_cnt<=delay_cnt-1;
+                else
+                    delay_cnt<=0;
+            end
+        end
+    end
+    always @(posedge clk or negedge rst)
+    begin
+        if(!rst)begin
+            key_value<=1'b1;
+            key_flag<=1'b0;
+        end
+        else begin
+            if(delay_cnt==20'b1)begin
+                key_flag<=1'b1;
+                key_value<=key;
+            end
+            else begin 
+                key_flag<=1'b0;
+                key_value<=key_value;
+            end        
+        end
+    end
+endmodule
+
+```
+
+beep_control.v
+
+```verilog
+module beep_control(
+    input            clk,
+    input            rst,
+    input            key_flag,
+    input            key_value,
+    output reg      beep
+
+    );
+always@(posedge clk or negedge rst)
+    begin
+        if(!rst)
+            beep<=1'b1;
+        else
+            if(key_flag&(~key_value))
+                beep<=~beep;
+            else
+                beep<=beep;
+    end
+endmodule
+```
+
+### 4.触摸按键控制LED
+
+ 
+
+```verilog
+module touch_led(
+	input 		clk,
+    input 		rst,
+    input 		touch_key,
+    output reg 	led
+);
+    reg 	touch_key_delay0;
+    reg 	touch_key_delay1; 
+    wire	touch_key_flag;
+    always @(posedge clk or negedge rst)
+    begin
+        
+    end
+            
+endmodule
 ```
 
