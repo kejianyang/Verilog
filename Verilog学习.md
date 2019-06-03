@@ -825,11 +825,37 @@ module touch_led(
     reg 	touch_key_delay0;
     reg 	touch_key_delay1; 
     wire	touch_key_flag;
+    assign touch_key_flag=(~touch_key_delay1)&touch_key_delay0;//检测上升沿
+    //assign touch_key_flag=(touch_key_delay1)&（~touch_key_delay0）;//检测下降沿
+    
     always @(posedge clk or negedge rst)
     begin
-        
+        if（!rst）begin
+           touch_key_delay0<=0;
+           touch_key_delay1<=0;
+        end
+        else begin
+            touch_key_delay0<=touch_key;
+            touch_key_delay1<=touch_key_delay0;
+        end
     end
+    always @(posedge clk or negedge rst)
+        begin
+            if(!rst)
+                led<=1'b1;
+            else
+                if(touch_key_flag)
+                    led<=~led;
+            	else
+                    led<=led;
+        end
             
 endmodule
 ```
+
+![1559272215121](/1559272215121.png)
+
+### 5数码管静态显示
+
+  共阴极数码管  1亮  共阳极数码管 0亮![1559273817936](/1559273817936.png)
 
