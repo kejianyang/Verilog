@@ -859,3 +859,131 @@ endmodule
 
   共阴极数码管  1亮  共阳极数码管 0亮![1559273817936](/1559273817936.png)
 
+top.v
+
+```verilog
+module seg_led_top(
+    input clk,
+    input rst,
+    output [5:0] sel,
+    output [7:0] seg
+    );
+    parameter TIME_SHOW=25'd2500_0000;
+    wire add_flag;
+    time_count #(.MAX_NUM(TIME_SHOW)) utime_count
+    (
+        .clk (clk),
+        .rst (rst),
+        .flag(add_flag)
+    );
+    seg_led_static u_seg_led_static(
+        .clk(clk),
+        .rst(rst),
+        .add_flag(add_flag),
+        .seg(seg),
+        .sel(sel)
+    );
+    
+endmodule
+```
+
+time_count.v
+
+```verilog
+module time_count(
+    input clk,
+    input rst,
+    output reg flag
+    );
+    //计数器最大计数
+    parameter MAX_NUM=25'd25000000;
+    //计数器
+    reg [24:0]cnt;
+    always@(posedge clk or negedge rst)begin
+        if(!rst)begin
+            flag<=0;
+            cnt=25'd0; 
+        end
+        else begin
+            if(cnt<25'd2500_0000)
+                cnt<=cnt+1'b1;
+            else begin
+                cnt<=25'd0;
+                flag=1;
+                end
+            end  
+    end
+    
+endmodule
+
+```
+
+seg_led_static.v
+
+```verilog
+module seg_led_static(
+    input    clk,
+    input    rst,
+    input    add_flag,//数码管变化通知信号
+    output reg  [ 5:0] sel,//位选信号
+    output reg  [ 6:0] seg//段选信号
+    );
+    reg [3:0] num;//数码管显示的十六进制数
+    //静态显示 显示所有数码管
+    always@(posedge clk or negedge rst)begin
+        if(!rst)
+            sel<=6'b111111;
+         else 
+            sel<=6'b000000;
+    end
+    always @(posedge clk or negedge rst) begin
+        if(!rst)
+            num<=4'b0000;
+        else if(add_flag) begin
+            if(num<4'b1111)
+                num<=num+1;
+             else
+                num<=4'b0000;
+        end
+        else
+            num<=num;
+    end
+    always@(posedge clk or negedge rst)begin
+        if(!rst)
+            seg<=8'b00000000;
+        else begin 
+            case(num)
+                4'h0: seg<=8'b1100_0000;
+                4'h1: seg<=8'b1111_1001;
+                4'h2: seg<=8'b1010_0100;
+                4'h3: seg<=8'b1011_0000;
+                4'h4: seg<=8'b1001_1001;
+                4'h5: seg<=8'b1001_0010;
+                4'h6: seg<=8'b1000_0010;
+                4'h7: seg<=8'b1111_1000;
+                4'h8: seg<=8'b1000_0000;
+                4'h9: seg<=8'b1001_0000;
+                4'ha: seg<=8'b1000_1000;
+                4'hb: seg<=8'b1000_0011;
+                4'hc: seg<=8'b1100_0110;
+                4'hd: seg<=8'b1010_0001;
+                4'he: seg<=8'b1000_0110;
+                4'hf: seg<=8'b1000_1110;
+                default: seg<=8'b1100_0000;
+                
+            endcase
+        end
+    end
+endmodule
+```
+
+### 6数码管动态显示
+
+![1559532661009](/1559532661009.png)
+
+top.v
+
+```
+
+```
+
