@@ -984,6 +984,311 @@ endmodule
 top.v
 
 ```
+module top_seg_led(
+	input 			sys_clk,
+	input 			sys_rst,
+	output [5:0]	seg_sel,
+	output [7:0]	seg_led
+);
+wire [19:0] data;
+wire [5:0] 	point;
+wire 		en;
+wire		sign;
 
+count u_count(
+	.clk 	(sys_clk),
+	.rst 	(sys_rst),
+	.data	(data),
+	.point	(point),
+	.en		(en),
+	.sign	(sign)
+);
+seg_led u_seg_led(
+	.clk 	(sys_clk),
+	.rst 	(sys_rst),
+	.data	(data),
+	.point	(point),
+	.en		(en),
+	.sign	(sign),
+	.seg_led(seg_led),
+	.seg_sel(seg_sel)
+);
+
+endmodule
+```
+
+count.v
+
+```verilog
+module count(
+	//module clk
+	input 				clk,
+	input 				rst,
+	output 	reg[19:0] 	data,//最大显示数据为999999
+	output  reg[5:0]	point,//小数点位置
+	output  reg			en,//使能信号
+	output	reg 		sign//符号位 高电平时显示负号 低电平时不显示负号
+	);
+parameter MAX_NUM=23'D5000_000;//计数器最大计数值
+reg [22:0] cnt;//计数器 用于计时 10ms
+reg 	   flag;//标志信号
+//计数器对系统达到10ms技术是，输出一个周期的脉冲信号
+always @(posedge clk or negedge rst)begin
+	if(!rst)begin
+		cnt<=23'b0;
+		flag<=1'b0;
+	end
+	else if(cnt<MAX_NUM-1,b1) begin
+		cnt<=cnt+1'b1;
+		flag<=1'b0;
+	end
+	else begin
+		cnt<=23'b0;
+		flag<=1'b1;
+	end
+end
+
+always @(posedge clk or negedge rst)begin
+		if(!rst)begin
+			data<=20'b0;
+			en<=1'b0;
+			sign<=1'b0;
+			point<=6'b000000;
+		end
+		else begin
+			sign<=1'b0;
+			point<=6'b000000;
+			if(flag)begin
+				if(data<20'd999999)
+					data<=data_1'b1;
+				else
+					data<=20'b0;
+			end
+		end
+end
+endmodule
+```
+
+seg_leg.v
+
+```verilog
+module seg_led(
+	input 				clk,
+	input 				rst,
+	input 	[19:0]		data,
+	input	[5:0]		point,
+	input  				en,
+	input 				sign,
+	output	reg[5:0]	sel,//段选信号
+	output	reg[7:0]	seg_led
+);
+localparam CLK_DIVIDE=4'd10;//时钟分频系数
+localparam MAX_NUM=13'D5000;//对数码管驱动时钟5MHz计数1ms所需要的计数值
+reg [3:0]			clk_cnt;//时钟分频户计数器
+reg 				dri_clk;//数码管的驱动时钟 5MHz
+reg [23:0]			num;//24位BCD码寄存器
+reg [12:0]			cnt0;//数码管驱动时钟计数器
+reg					flag;//标志信号（标志着cnt0）计数达到1ms
+reg [2:0]			cnt_sel;//数码管当前位选计数器
+reg					num_disp;//当前数码管显示的数据
+reg					dot_disp;//当前数码管显示的小数点
+
+wire [3:0]			data5;//十万位数
+wire [3:0]			data4;//万位数
+wire [3:0]			data3;//千位数
+wire [3:0]			data2;//百位数
+wire [3:0]			data1;//十位数
+wire [3:0]			data0;//个位数
+
+
+assign data0=data%4'd10; //个位数
+assign data1=data/4'd10%4'd10;//十位数
+assign data2=data/7'd100%4'd10;//百位数
+assign data3=data/10'd1000%4'd10;//千位数
+assign data4=data/14'd10000%4'd10;//万位数
+assign data5=data/17'd100000;//万位数
+
+//对系统时钟进行10分频 得到的频率为5MHz的数码管驱动时钟dri_clk
+always@(posedge clk or negedge rst) begin
+	if(!rst)begin
+		clk_cnt<=4'd0;
+		dri_clk<=1'b1;
+	end
+	else if (clk_cnt==CLK_DIVIDE/2-1'b1) begin
+		clk_cnt<=4'd0;
+		dri_clk<=~dri_clk;
+	end
+	else begin
+		clk_cnt<=clk_cnt+1'b1;
+		dri_clk<=dri_clk;
+	end
+end
+//将20位2进制数转换为8421bcd码 （即使用4位二进制表示以一位十进制数）
+always@(posedge dri_clk or negedge rst) begin
+	if(!rst)
+		num<24'b0;
+	else begin
+		if(data5||point[5]) begin//如果为6位十进制数,则依次给6位数码管赋值
+			num[23:20]<=data5;
+			num[19:16]<=data4;
+			num[15:12]<=data3;
+			num[11:8]<=data2;
+			num[7:4]<=data1;
+			num[3:0]<=data0;
+		end
+		else begin
+			if(data4||point[4]) begin////如果为5位十进制数,则依次给低5位数码管赋值
+				num[19:0]<={data4,data3,data2,data1,data0};
+				if(sign)
+					num[23:20]<=4'd11;//如果需要显示符号位,则最高位位符号位
+				else 
+					num[23:20]<=4'd10;//如果不需要显示符号位,则最高位不显示
+			end
+			else begin
+				if(data3||point[3]) begin////如果为4位十进制数,则依次给低4位数码管赋值
+					num[15:0]<={data3,data2,data1,data0};
+					num[23:20]<=4'd10;//第六位不需要显示任何东西
+					if(sign)
+						num[19:16]<=4'd11;//如果需要显示符号位,则第5位位符号位
+					else 
+						num[19:16]<=4'd10;//如果不需要显示符号位,则第5位不显示
+				end
+				else begin
+					if(data2||point[2]) begin////如果为3位十进制数,则依次给低3位数码管赋值
+						num[11:0]<={data2,data1,data0};
+						num[23:16]<={2{4'd10}};//第六 五位不需要显示任何东西
+						if(sign)
+							num[15:12]<=4'd11;//如果需要显示符号位,则第4位位符号位
+						else 
+							num[15:12]<=4'd10;//如果不需要显示符号位,则第4位不显示
+					else begin
+						if(data1||point[1]) begin////如果为2位十进制数,则依次给低2位数码管赋值
+							num[7:0]<={data1,data0};
+							num[23:12]<={3{4'd10}};//第六 五 四位不需要显示任何东西
+							if(sign)
+								num[11:8]<=4'd11;//如果需要显示符号位,则第3位位符号位
+							else 
+								num[11:8]<=4'd10;//如果不需要显示符号位,则第3位不显示
+						end
+						else begin
+							num[3:0]<=data0;
+							num[23:8]<{4{4'd10}};
+							if(sign)
+								num[7:4]<=4'd11;//如果需要显示符号位,则第2位位符号位
+							else 
+								num[7:4]<=4'd10;//如果不需要显示符号位,则第2位不显示
+						end
+					end
+				end
+			end
+		end
+			
+	end
+end
+//每当计数器对数码驱动时钟技术时间达1ms 输出一个时钟周期的脉冲信号
+always@(posedge dri_clk or negedge rst)begin
+	if(!rst)begin
+		cnt0<=1'b0;
+		flag<=1'b0;
+	end
+	else if(cnt0<MAX_NUM-1'b1)begin
+		cnt0<=cnt0+1'b1;
+		flag<=flag;
+	end
+	else begin
+		cnt0<=1'b0;
+		flag<=1'b1;
+	end
+end
+//cnt_sel从0计数到5 用于选择当前显示状态的数码管
+always@(posedge dri_clk or negedge rst)begin
+	if(!rst)
+		cnt_sel<=3'b0;
+	else if(flag) begin
+		if(cnt_sel<3'd5) 
+			cnt_sel<=cnt_sel+1’b1;
+		else
+			cnt_sel<1'b0;
+	end
+	else
+		cnt_sel<=cnt_sel;
+end
+//控制数码管段选信号 使6位数码管轮流显示
+always@(posedge dri_clk or negedge rst)begin
+	if(!rst) begin
+		sel<=6'b111111;
+		num_disp<4'b0;
+		dot_disp<=1'b1;
+	end
+	else begin
+		if (en ) begin
+			case(cnt_sel)
+				3'd0:begin
+					seg_sel<=6'b111110;
+					num_disp<=num[3:0];
+					dot_disp<=~point[0];
+				end
+				3'd1:begin
+					seg_sel<=6'b111101;
+					num_disp<=num[7:4];
+					dot_disp<=~point[1];
+				end
+				3'd2:begin
+					seg_sel<=6'b111011;
+					num_disp<=num[11:8];
+					dot_disp<=~point[3];
+				end
+				3'd3:begin
+					seg_sel<=6'b110111;
+					num_disp<=num[15:12];
+					dot_disp<=~point[4];
+				end
+				3'd4:begin
+					seg_sel<=6'b101111;
+					num_disp<=num[19:16];
+					dot_disp<=~point[5];
+				end
+				3'd5:begin
+					seg_sel<=6'b011111;
+					num_disp<=num[23:20];
+					dot_disp<=~point[5];
+				end
+				default:begin
+					sel<=6'b111111;
+					num_disp<4'b0;
+					dot_disp<=1'b1;
+				end	
+			endcase
+		end
+		else begin
+			sel<=6'b111111;
+			num_disp<4'b0;
+			dot_disp<=1'b1;
+		end
+	end
+end
+//数码管控制段选信号 显示字符
+always@(posedge dri_clk or negedge rst)begin
+	if(!rst)
+		seg_led<=8'hc0;
+	else begin
+		case(nump_disp)
+			4'd0:seg_led<={dot_disp,7'b1000000};//显示数字0
+			4'd1:seg_led<={dot_disp,7'b1111001};//显示数字1
+			4'd2:seg_led<={dot_disp,7'b0100100};//显示数字2
+			4'd3:seg_led<={dot_disp,7'b0110000};//显示数字3
+			4'd4:seg_led<={dot_disp,7'b0011001};//显示数字4
+			4'd5:seg_led<={dot_disp,7'b0010010};//显示数字5
+			4'd6:seg_led<={dot_disp,7'b0000010};//显示数字6
+			4'd7:seg_led<={dot_disp,7'b1111000};//显示数字7
+			4'd8:seg_led<={dot_disp,7'b0000000};//显示数字8
+			4'd9:seg_led<={dot_disp,7'b0010000};//显示数字9
+			4'd10:seg_led<=8'b11111111;//不显示任何字符
+			4'd11:seg_led<=8'b10111111;//显示负号
+			
+	end
+end
+
+endmodule
 ```
 
