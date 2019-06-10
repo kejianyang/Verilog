@@ -1301,6 +1301,73 @@ endmodule
 
 ![NEC码位定义](assets/1560144421481.png)
 
-![1560144503974](assets/1560144503974.png)
+![NEC协议数据传输格式](assets/1560144503974.png)
 
-![1560144589706](assets/1560144589706.png)
+![NEC协议数据重复码](assets/1560144589706.png)
+
+![NEC协议数据重复码2](assets/1560144720197.png)
+
+![红外接收头](assets/1560144811164.png)
+
+最后接三极管作用电平取反
+
+![红外接收解码](assets/1560144938480.png)
+
+![红外接收解码2](assets/1560145132120.png)
+
+检测遥控器发出的信号，显示，如果有重复码 则闪烁
+
+#### 程序设计
+
+![状态转移图](assets/1560145636320.png)
+
+top.v
+
+```verilog
+module top_remote_recv(
+	input				sys_clk,
+	input				sys_rst,
+	input				remote_in,//红外接收信号
+	output 		[5:0]	sel,//数码管位选信号
+	output 		[7:0]	seg_led,//数码管段选信号
+	output				led//led灯
+);
+//wire define
+wire 	[7:0]		data;
+wire 				repeat_en;
+//数码管显示模块
+seg_led u_seg_led(
+	.clk		(sys_clk),
+	.rst		(sys_rst),
+	.sel		(sel),
+	.seg_led	(seg_led),
+	.data		(data),		//红外数据
+	.point		(6'd0),		//无小数点
+	.en			(1'b1),		//使能数码管
+	.sign		(1'b0)		//无符号显示
+);
+//红外接收模块
+remote_rcv u_remote_rcv(
+	.sys_clk	(sys_clk),
+	.sys_rst	(sys_rst),
+	.remote_in	(remote_in),
+	.repeat_en	(repeat_en),
+	.data_en	(),
+	.data		(data)
+);
+led_ctrl u_led_ctrl(
+	.sys_clk	(sys_clk),
+	.sys_rst	(sys_rst),
+	.repeat_en	(repeat_en),
+	.led		(led)
+);
+endmodule
+
+```
+
+remote_rcv.v
+
+```
+
+```
+
