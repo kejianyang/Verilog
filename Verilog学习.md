@@ -1,6 +1,5 @@
 ---
-typora-copy-images-to: assets
-typora-root-url: assets
+
 ---
 
 #   Verilog学习
