@@ -1750,3 +1750,91 @@ VGA  :Video Graphics Array  视频图形阵列，使用模拟信号进行视频�
 #### 分辨率
 
 ![1562900903269](assets/1562900903269.png)
+
+#### 权电阻网络
+
+![1562902825628](assets/1562902825628.png)
+
+ vga_display.v
+
+```verilog
+ module vga_display(
+	input 				sys_clk,
+	input 				sys_rst,
+	input		[9:0]	pixel_xpos,//像素点横坐标
+	input		[9:0]	pixel_ypos,//像素点 纵坐标
+	output reg	[15:0]	pixel_data
+ );
+ parameter  H_DISP	=10'd640;//分辨率一行
+ parameter	V_DISP	=10'D480;//分辨率一列
+ parameter	WHITE	=16'b11111_111111_11111;//RGB565白色
+ parameter	BLACK	=16'b00000_000000_00000;//RGB565黑色 
+ parameter	RED		=16'b11111_000000_00000;//RGB565红色
+ parameter	GREEN	=16'b00000_111111_00000;//RGB565绿色
+ parameter	BLUE	=16'b00000_000000_11111;//RGB565蓝色
+ 
+ 
+ always@(posedge vga_clk or negedge sys_rst)begin
+	if(!sys_rst)
+		pixel_data<=16'd0;
+	else begin
+		if((pixel_xpos>=0)&&(pixel_xpos<(H_DISP/5)*1))
+			pixel_data<=WHITE;
+		if((pixel_xpos>=(H_DISP/5)*1))&&(pixel_xpos<(H_DISP/5)*2))
+			pixel_data<=BLACK;
+		if((pixel_xpos>=(H_DISP/5)*2))&&(pixel_xpos<(H_DISP/5)*3))
+			pixel_data<=RED;
+		if((pixel_xpos>=(H_DISP/5)*3))&&(pixel_xpos<(H_DISP/5)*4))
+			pixel_data<=GREEN;
+		else
+			pixel_data<=BLUE;
+	end
+ end
+ endmodule
+ 
+```
+
+vga_driver.v
+
+```verilog
+module vga_driver(
+	input 				vga_clk,
+	input				sys_rst,
+	
+	output				vga_hs,//行同步信号
+	output				vga_vs,//场同步信号
+	output	[15:0]		vga_rgb,//红绿蓝三原色输出
+	
+	input	[15:0]		pixel_data,//像素点数据
+	input	[9:0]		pixel_xpos,//像素点横坐标
+	input	[9:0]		pixel_ypos//像素点纵坐标
+);
+
+parameter 	H_SYNC	=10'd96;	//行同步
+parameter	H_BACK	=10'd48;	//行显示后沿
+parameter	H_DISP	=10'd640;	//行有效数据
+parameter	H_FRONT	=10'd16;	//行显示前沿
+parameter	H_TOTAL	=10'd800;	//行扫描周期
+
+parameter 	V_SYNC	=10'd2;	//行同步
+parameter	V_BACK	=10'd33;	//行显示后沿
+parameter	V_DISP	=10'd480;	//行有效数据
+parameter	V_FRONT	=10'd10;	//行显示前沿
+parameter	V_TOTAL	=10'd525;	//行扫描周期
+
+reg		[9:0]	cnt_h;
+reg		[9:0]	cnt_v;
+
+wire	vga_en;
+wire	data_reg;
+
+//VGA行场同步信号
+assign	vga_hs	=(cnt_h<=H_SYNC-1'b1)?1'b0:1'b1;
+assign	vga_vs	=(cnt_v<=V_SYNC-1'b1)?1'b0:1'b1;
+
+//使能RGB565数据输出
+assign vga_en=(((cn
+
+endmodule
+```
+
