@@ -1826,14 +1826,39 @@ reg		[9:0]	cnt_h;
 reg		[9:0]	cnt_v;
 
 wire	vga_en;
-wire	data_reg;
+wire	data_req;
 
 //VGA行场同步信号
 assign	vga_hs	=(cnt_h<=H_SYNC-1'b1)?1'b0:1'b1;
 assign	vga_vs	=(cnt_v<=V_SYNC-1'b1)?1'b0:1'b1;
 
 //使能RGB565数据输出
-assign vga_en=(((cn
+assign vga_en=(((cnt_h>=H_SYNC+H_BACK)&&(cnt_h<=H_SYNC+H_BACK+H_DISP))
+				&&((cnt_v>=V_SYNC+V_BACK)&&(cnt_v<V_SYNC+V_BACK+V_DISP)))
+				?1'b1:1'b0;
+//RGB565数据输出
+assign vga_rgb=vga_en?pixel_data:16'b0;
+//请求像素点颜色数据输入
+assign data_req=(((cnt_h>=H_SYNC+H_BACK-1'b1)&&(cnt_h<=H_SYNC+H_BACK+H_DISP-1'b1))
+				&&((cnt_v>=V_SYNC+V_BACK)&&(cnt_v<V_SYNC+V_BACK+V_DISP)))
+				?1'b1:1'b0;
+//像素点坐标
+assign pixel_xpos=data_req?(cnt_h-(H_SYNC+H_BACK-1'b1)):10'd0;
+assign pixel_ypos=data_req?(cnt_v-(V_SYNC+V_BACK-1'b1)):10'b0;
+
+//行计数器对像素时钟计数
+always@(posedge vga_clk or sys_rst) begin
+	if(!sys_rst)
+		cnt_h<=10'd0;
+	else begin 
+		if(cnt_h<H_TOTAL-1'b1)
+			cnt_h<=cnt_h+1'b1;
+		else
+			cnt_h<10'b0;
+	end
+end
+				
+//场计数器对行计数
 
 endmodule
 ```
