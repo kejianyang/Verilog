@@ -1917,7 +1917,7 @@ vga_display u_vga_display(
 endmodule
 ```
 
-```
+```VERILOG
 module vga_driver(
 	input 				vga_clk,
 	input				vga_rst,
