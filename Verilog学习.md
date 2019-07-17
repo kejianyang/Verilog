@@ -1992,3 +1992,102 @@ end
 endmodule
 ```
 
+```verilog
+module vga_display(
+	input				vga_clk,
+	input				sys_rst,
+	
+	input		[9:0]	pixel_xpos,
+	input		[9:0]	pixel_ypos,
+	output	reg	[15:0]	pixel_data
+);
+parameter	H_DISP	=10'640;
+parameter	V_DISP	=10'480;
+
+localparam	SIDE_W	=10'd20;//边框宽度
+localparam	BLOCK_W	=10'd40;//方块宽度
+localparam	BLUE	=16'b00000_000000_11111;
+localparam	BLACK	=16'b00000_000000_00000;
+localparam	WHITE	=16'b11111_111111_11111;
+wire 	move_en;//移动使能
+reg		[21:0]		div_cnt;//分频计数器
+reg		[9:0]		block_x;//方块左上角横坐标
+reg		[9:0]		block_y;//方块左上角纵坐标		
+reg					h_direct;//水平移动方向 1右移  0左移
+reg					v_direct;//垂直移动方向	1下移  0上移
+
+
+assign move_en=(div_cnt==22'd250000-1)?1'b1:1'b0;
+
+always@(posedge vga_clk or negedge sys_rst)begin
+	if(!sys_rst)
+		div_cnt<=22'd0;
+	else begin
+		if(div_cnt<22'd250000-1'b1)
+			div_cnt<=div_cnt+1'b1;
+		else	
+			div_cnt<=22'd0;
+	end
+end
+
+always@(posedge vga_clk or negedge sys_rst)begin
+	if(!sys_rst)begin
+		block_x<=10'd40;
+		block_y<=10'd40;
+	end
+	else if(move_en)begin
+		if(h_direct)
+			block_x<=block_x+1'b1;
+		else
+			block_x<=block_x-1'b1;
+		if (v_direct)
+			block_y<=block_y+1'b1;
+		else	
+			block_y<=block_y-1'b1;
+	end
+	else  begin
+		block_x<=block_x;
+		block_y<=block_y;
+
+end
+
+always@(posedge vga_clk or negedge sys_rst)begin
+	if(!sys_rst) begin
+		h_direct<=1'b1;
+		v_direct<=1'b1;
+	end
+	else begin
+		if(block_x==SIDE_W)
+			h_direct<=1'b1;
+		else if(block_x==H_DISP-SIDE_W-BLOCK_W-1'b1)
+			h_direct<=1'b0;
+		else
+			h_direct<=h_direct;
+		
+		if(block_y==SIDE_W)
+			v_direct<=1'b1;
+		else if(block_x==V_DISP-SIDE_W-BLOCK_W-1'b1)
+			v_direct<=1'b0;
+		else
+			v_direct<=v_direct;
+	end
+end
+always@(posedge vga_clk or negedge sys_rst) begin
+	if(!sys_rst)
+		pixel_data<=BLACK;
+	else begin
+		if((pixel_xpos < SIDE_W) || (pixel_xpos >= H_DISP - SIDE_W)
+          || (pixel_ypos < SIDE_W) || (pixel_ypos >= V_DISP - SIDE_W))
+            pixel_data <= BLUE;                 //绘制边框为蓝色
+        else
+        if((pixel_xpos >= block_x) && (pixel_xpos < block_x + BLOCK_W)
+          && (pixel_ypos >= block_y) && (pixel_ypos < block_y + BLOCK_W))
+            pixel_data <= BLACK;                //绘制方块为黑色
+        else
+            pixel_data <= WHITE;                //绘制背景为白色
+	end
+
+end
+endmodule
+```
+
