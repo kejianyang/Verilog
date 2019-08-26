@@ -1863,6 +1863,10 @@ end
 endmodule
 ```
 
+
+
+### 11vga方块移动
+
 top.v
 
 ```verilog
@@ -2091,3 +2095,4 @@ end
 endmodule
 ```
 
+### 12 vga显示字符
