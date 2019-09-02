@@ -2127,3 +2127,75 @@ BL  背光信号
 
 ![1567411461433](Verilog学习.assets/1567411461433.png)
 
+top.v
+
+```verilog
+module lcd_rgb_colorbar(
+	input				sys_clk,//系统时钟
+	input				sys_rst_n,//系统复位
+	
+	output				lcd_hs,//行同步信号
+	output				lcd_vs,//场同步信号
+	output				lcd_de,//数据有效信号
+	output		[15:0]	lcd_rgb,//数据信号
+	output				lcd_bl,//背光信号
+	output 				lcd_rst,//复位信号
+	output				lcd_pclk//采样时钟
+);
+
+wire 			lcd_clk_w;//分频时钟 33.3Mhz
+wire			locked_w;//输出稳定信号
+wire			rst_n_w;//复位信号
+wire	[15:0]	pixel_data_w;//像素点数据
+wire	[9:0]	pixel_xpos_w;//像素点横坐标
+wire	[9:0]	pixel_ypos_w;//像素点纵坐标
+
+
+
+assign	rst_n_w=sys_rst_n&locked_w;
+lcd_pll u_lcd_pll(
+	.inclk0		(sys_clk),
+	.areset		(~sys_rst_n),
+	.c0			(lcd_clk_w),
+	.locked		(locked_w)
+);
+
+lcd_driver	u_lcd_driver(
+	.lcd_clk		(lcd_clk_w),
+	.lcd_rst_n		(rst_n_w),
+	.lcd_hs			(lcd_hs),
+	.lcd_vs			(lcd_vs),
+	.lcd_de			(lcd_de),
+	.lcd_rgb		(lcd_rgb),
+	.lcd_bl			(lcd_bl),
+	.lcd_rst		(lcd_rst),
+	.lcd_pclk		(lcd_pclk),
+	
+	.pixel_data		(pixel_data_w),
+	.pixel_xpos		(pixel_xpos_w),
+	.pixel_ypos		(pixel_ypos_w)
+);
+lcd_display u_lcd_display(
+	.lcd_lck		(lcd_clk_w),
+	.sys_rst_n		(rst_n_w),
+	
+	.pixel_data		(pixel_data_w),
+	.pixel_xpos		(pixel_xpos_w),
+	.pixel_ypos		(pixel_ypos_w)
+
+);
+endmodule
+```
+
+lcd_driver.v
+
+```verilog
+module lcd_driver(
+	input	lcd_clk,
+	input	sys_rst_n,
+	
+	output	lcd_
+);
+endmodule
+```
+
