@@ -2095,4 +2095,12 @@ end
 endmodule
 ```
 
-### 12 vga显示字符
+### 12 VGA显示字符
+
+### 13 VGA显示图片（ROM）
+
+### 14 RGB TFT-LCD
+
+#### 行同步时序
+
+![1567410493171](Verilog学习.assets/1567410493171.png)
