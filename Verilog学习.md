@@ -1996,6 +1996,10 @@ end
 endmodule
 ```
 
+
+
+display
+
 ```verilog
 module vga_display(
 	input				vga_clk,
@@ -2190,12 +2194,6 @@ endmodule
 lcd_driver.v
 
 ```verilog
-module lcd_driver(
-	input	lcd_clk,
-	input	sys_rst_n,
-	
-	output	lcd_
-);
-endmodule
+
 ```
 
